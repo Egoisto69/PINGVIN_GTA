@@ -1,568 +1,698 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Penguin GTA: Window Smash</title>
+  <title>PINGVIN.GTA — Helsinki Window Academic Edition</title>
   <style>
-    :root {
-      --bg: #0f1724;
-      --panel: #111827;
-      --accent: #22d3ee;
-      --danger: #f87171;
-      --ok: #34d399;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
+    * { box-sizing: border-box; }
+    html, body {
       margin: 0;
-      font-family: Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(circle at top, #1f2937, #0b1020 70%);
-      color: #e5e7eb;
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Comic Sans MS", "Segoe UI", Tahoma, sans-serif;
+      background: #050508;
+      color: #f8fafc;
+    }
+    #game-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+    #hud {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hud-panel {
+      pointer-events: auto;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 27, 75, 0.88));
+      border: 3px solid #f472b6;
+      border-radius: 4px;
+      padding: 10px 14px;
+      box-shadow: 0 0 0 2px #000, 4px 4px 0 #000;
+      max-width: min(420px, 94vw);
+    }
+    .hud-panel h1 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+      color: #fde047;
+      text-shadow: 2px 2px 0 #831843;
+    }
+    .hud-row { font-size: 13px; line-height: 1.35; }
+    .hud-row strong { color: #67e8f9; }
+    .tag {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 8px;
+      background: #be123c;
+      color: #fff;
+      font-size: 11px;
+      border: 2px solid #000;
+      transform: rotate(-2deg);
+    }
+    #crosshair {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      margin: -7px 0 0 -7px;
+      border: 2px solid rgba(253, 224, 71, 0.9);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9;
+      mix-blend-mode: difference;
+    }
+    #event-popup {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: min(320px, 92vw);
+      max-height: 46vh;
+      overflow: auto;
+      background: #fef08a;
+      color: #1e293b;
+      border: 4px solid #0f172a;
+      border-radius: 2px;
+      padding: 12px;
+      font-size: 13px;
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.4);
+      z-index: 20;
+      display: none;
+      transform: rotate(0.5deg);
+    }
+    #event-popup h2 { margin: 0 0 8px; font-size: 15px; color: #be123c; }
+    #event-popup .meta { font-size: 11px; opacity: 0.85; margin-bottom: 8px; }
+    #study-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
       padding: 16px;
     }
-
-    .wrap {
-      width: min(980px, 100%);
-      display: grid;
-      gap: 12px;
-    }
-
-    .hud {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      background: rgba(17, 24, 39, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 12px;
-      padding: 10px 12px;
-      backdrop-filter: blur(4px);
-    }
-
-    .hud span strong {
-      color: var(--accent);
-    }
-
-    canvas {
+    #study-box {
+      background: #ecfdf5;
+      color: #064e3b;
+      border: 5px double #047857;
+      padding: 20px;
+      max-width: 440px;
       width: 100%;
-      max-width: 960px;
-      height: auto;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: #0b1324;
-      image-rendering: pixelated;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      border-radius: 2px;
+      box-shadow: 0 0 0 4px #bbf7d0;
     }
-
-    .help {
+    #study-box h2 { margin-top: 0; font-size: 18px; }
+    #study-box code { display: block; background: #042f2e; color: #a7f3d0; padding: 10px; margin: 10px 0; font-size: 14px; }
+    #study-box input {
+      width: 100%;
+      padding: 10px;
+      font-family: Consolas, monospace;
       font-size: 14px;
-      color: #cbd5e1;
-      background: rgba(17, 24, 39, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 12px;
-      padding: 10px 12px;
-      line-height: 1.4;
+      border: 2px solid #047857;
+      margin-bottom: 10px;
+    }
+    #study-box button {
+      font-family: inherit;
+      padding: 8px 16px;
+      margin-right: 8px;
+      cursor: pointer;
+      border: 3px solid #000;
+      background: #34d399;
+      font-weight: bold;
+    }
+    #friends-panel {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      z-index: 12;
+      pointer-events: auto;
+    }
+    #friends-panel button {
+      font-family: inherit;
+      cursor: pointer;
+      padding: 8px 12px;
+      border: 3px solid #000;
+      background: #a78bfa;
+      font-weight: bold;
+      box-shadow: 3px 3px 0 #000;
+    }
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 120px;
+      transform: translateX(-50%);
+      background: #1e1b4b;
+      color: #fef3c7;
+      padding: 10px 18px;
+      border: 3px solid #f9a8d4;
+      z-index: 25;
+      display: none;
+      font-size: 14px;
+      max-width: 90vw;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hud">
-      <span>Окна разбито: <strong id="score">0</strong></span>
-      <span>Деньги: <strong id="money">$0</strong></span>
-      <span>Розыск: <strong id="wanted">0★</strong></span>
-      <span>ХП: <strong id="hp">100</strong></span>
+  <canvas id="game-canvas"></canvas>
+  <div id="crosshair"></div>
+  <div id="hud">
+    <div class="hud-panel">
+      <h1>🐧 PINGVIN.GTA — study &amp; vandalise responsibly</h1>
+      <div class="hud-row">Points: <strong id="pts">0</strong> · Windows smashed: <strong id="smash">0</strong></div>
+      <div class="hud-row">🍎 Apples: <strong id="apples">8</strong> · Weapon: <strong id="weapon">Apples</strong></div>
+      <div class="hud-row">Credits (skins later): <strong id="creds">0</strong> · Drunk: <strong id="drunk">sober</strong></div>
+      <div class="tag">WASD move · mouse aim (click locks) · click throw · B bazooka (3🍎) · R new city · H study +5🍎 · O öl wobble</div>
     </div>
-    <canvas id="game" width="960" height="600"></canvas>
-    <div class="help">
-      Управление: <b>WASD / ЦФЫВ / стрелки</b> - ходить, <b>Пробел</b> - удар битой, <b>R</b> - рестарт.<br />
-      Теперь в 3D-стиле: ломай окна и не дай полицейскому тебя схватить.
+  </div>
+  <div id="event-popup">
+    <h2 id="ev-title"></h2>
+    <div class="meta" id="ev-meta"></div>
+    <p id="ev-body"></p>
+  </div>
+  <div id="friends-panel">
+    <button type="button" id="btn-friends">👯 Squad (mock)</button>
+  </div>
+  <div id="toast"></div>
+  <div id="study-overlay">
+    <div id="study-box">
+      <h2>Assignment bureau (Linux-ish)</h2>
+      <p>Type the line below exactly. Education = ammo. Capitalism = skins later.</p>
+      <code id="study-task"></code>
+      <input id="study-input" type="text" autocomplete="off" placeholder="your answer..." />
+      <div>
+        <button type="button" id="study-submit">Submit &amp; get +5 🍎</button>
+        <button type="button" id="study-close" style="background:#fca5a5;">Cancel</button>
+      </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script>
-    const canvas = document.getElementById("game");
-    if (!canvas) {
-      throw new Error("Canvas не найден или не поддерживается браузером");
-    }
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Canvas не найден или не поддерживается браузером");
-    }
+    /* global THREE */
+    (function () {
+      if (typeof THREE === "undefined") {
+        document.body.innerHTML = "<p style='padding:24px;color:#fff'>Failed to load Three.js. Check network.</p>";
+        return;
+      }
 
-    const scoreEl = document.getElementById("score");
-    const moneyEl = document.getElementById("money");
-    const wantedEl = document.getElementById("wanted");
-    const hpEl = document.getElementById("hp");
+      const canvas = document.getElementById("game-canvas");
+      const elPts = document.getElementById("pts");
+      const elSmash = document.getElementById("smash");
+      const elApples = document.getElementById("apples");
+      const elWeapon = document.getElementById("weapon");
+      const elCreds = document.getElementById("creds");
+      const elDrunk = document.getElementById("drunk");
+      const eventPopup = document.getElementById("event-popup");
+      const evTitle = document.getElementById("ev-title");
+      const evMeta = document.getElementById("ev-meta");
+      const evBody = document.getElementById("ev-body");
+      const studyOverlay = document.getElementById("study-overlay");
+      const studyTask = document.getElementById("study-task");
+      const studyInput = document.getElementById("study-input");
+      const studySubmit = document.getElementById("study-submit");
+      const studyClose = document.getElementById("study-close");
+      const toastEl = document.getElementById("toast");
 
-    const world = { width: canvas.width, height: canvas.height, size: 900 };
-    const keys = new Set();
-    const rand = (a, b) => Math.random() * (b - a) + a;
-    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-    const dist2D = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
-    const keyMap = { ц: "w", ф: "a", ы: "s", в: "d" };
-    const normalizeKey = (key) => keyMap[key.toLowerCase()] || key.toLowerCase();
+      const FINNISH_EVENTS = [
+        { title: "Vappu pre-party (legal chaos)", uni: "University of Helsinki", city: "Helsinki", blurb: "Flash your progress in-game for -15% on student overalls patch (mock)." },
+        { title: "Aaltoes BBQ & bad ideas", uni: "Aalto University", city: "Espoo", blurb: "Otaniemi window myth: break responsibly. Free sticker if you show this popup (not real)." },
+        { title: "Metropolia LAN & chill", uni: "Metropolia UAS", city: "Helsinki / Vantaa", blurb: "Discount code: STUDY-FIRST-2026 (placeholder) — future hook to real events API." },
+        { title: "HY Linux user group", uni: "UH / Open Source", city: "Helsinki", blurb: "Replace apple throwing with contributing to FOSS. Or keep both. We don't judge." },
+        { title: "Laurea startup stand-up", uni: "Laurea UAS", city: "Espoo / Vantaa", blurb: "Network badly on purpose — talk to three humans. +1 social XP (imaginary)." }
+      ];
 
-    const state = { score: 0, money: 0, wanted: 0, hp: 100, gameOver: false, msg: "", messageTimer: 0 };
-    const penguin = { x: 0, z: 0, speed: 260, facing: 1, swingTimer: 0, swingCd: 0 };
-    const police = { x: 260, z: 220, speed: 190, hitCd: 0 };
+      const STUDY_LINES = [
+        "ls -la",
+        "cd ~ && pwd",
+        "chmod +x ./pinguin.sh",
+        "grep -r TODO src/",
+        "export PATH=$PATH:~/bin"
+      ];
 
-    const buildings = [];
-    const cars = [];
-    const particles = [];
+      let scene, camera, renderer;
+      let penguin, penguinGroup;
+      let yaw = 0;
+      let pitch = 0.35;
+      let keys = {};
+      let windows = [];
+      let projectiles = [];
+      let particles = [];
 
-    const camera = {
-      x: 0,
-      z: 0,
-      cx: world.width / 2,
-      cy: 190,
-      sx: 0.72,
-      sy: 0.38
-    };
-
-    function project(x, z, y = 0) {
-      const dx = x - camera.x;
-      const dz = z - camera.z;
-      return {
-        x: camera.cx + (dx - dz) * camera.sx,
-        y: camera.cy + (dx + dz) * camera.sy - y
+      const state = {
+        points: 0,
+        windowsSmashed: 0,
+        apples: 8,
+        credits: 0,
+        weapon: "apple",
+        drunk: false,
+        drunkT: 0,
+        eventHideTimer: null
       };
-    }
 
-    function spawnWorld() {
-      buildings.length = 0;
-      cars.length = 0;
-      particles.length = 0;
+      let studyExpected = "";
 
-      for (let i = 0; i < 14; i++) {
-        const b = {
-          x: rand(-380, 380),
-          z: rand(-380, 380),
-          w: rand(90, 145),
-          d: rand(90, 145),
-          h: rand(70, 140),
-          color: `hsl(${Math.floor(rand(195, 250))} 35% ${Math.floor(rand(25, 40))}%)`,
-          windows: []
-        };
-        const cols = 2 + Math.floor(rand(0, 2));
-        const rows = 2 + Math.floor(rand(0, 3));
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            b.windows.push({
-              x: b.x - b.w * 0.35 + c * (b.w * 0.7 / Math.max(1, cols - 1)),
-              z: b.z + b.d * 0.52,
-              y: 18 + r * (b.h * 0.6 / Math.max(1, rows - 1)),
-              broken: false
-            });
+      function showToast(msg, ms = 2200) {
+        toastEl.textContent = msg;
+        toastEl.style.display = "block";
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => { toastEl.style.display = "none"; }, ms);
+      }
+
+      function openStudy() {
+        studyExpected = STUDY_LINES[Math.floor(Math.random() * STUDY_LINES.length)];
+        studyTask.textContent = studyExpected;
+        studyInput.value = "";
+        studyOverlay.style.display = "flex";
+        studyInput.focus();
+      }
+
+      function closeStudy() {
+        studyOverlay.style.display = "none";
+      }
+
+      studySubmit.addEventListener("click", () => {
+        const v = studyInput.value.trim();
+        if (v === studyExpected) {
+          state.apples += 5;
+          state.credits += 10;
+          showToast("Approved. +5 apples. The dean is proud. Somewhere.");
+          closeStudy();
+          updateHud();
+        } else {
+          showToast("Wrong. Try again. This is literally your major now.", 2800);
+        }
+      });
+      studyClose.addEventListener("click", closeStudy);
+      studyInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") studySubmit.click();
+      });
+
+      document.getElementById("btn-friends").addEventListener("click", () => {
+        const code = "FIN-" + Math.floor(1000 + Math.random() * 9000);
+        showToast("Squad code (mock): " + code + " — paste to friends; go break glass together IRL responsibly.", 4000);
+      });
+
+      function pickEvent() {
+        return FINNISH_EVENTS[Math.floor(Math.random() * FINNISH_EVENTS.length)];
+      }
+
+      function showEventCard(ev) {
+        evTitle.textContent = ev.title;
+        evMeta.textContent = ev.uni + " · " + ev.city;
+        evBody.textContent = ev.blurb + "\n\n(Small popup by design — future: import real calendars from Helsinki / Espoo / Vantaa.)";
+        eventPopup.style.display = "block";
+        if (state.eventHideTimer) clearTimeout(state.eventHideTimer);
+        state.eventHideTimer = setTimeout(() => { eventPopup.style.display = "none"; }, 7000);
+      }
+
+      function updateHud() {
+        elPts.textContent = String(state.points);
+        elSmash.textContent = String(state.windowsSmashed);
+        elApples.textContent = String(state.apples);
+        elWeapon.textContent = state.weapon === "apple" ? "Apples" : "Bazooka (overkill)";
+        elCreds.textContent = String(state.credits);
+        elDrunk.textContent = state.drunk ? "YES (wobble)" : "sober";
+      }
+
+      function makePenguin() {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(
+          new THREE.SphereGeometry(0.55, 16, 12),
+          new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.6 })
+        );
+        body.position.y = 0.55;
+        g.add(body);
+
+        const belly = new THREE.Mesh(
+          new THREE.SphereGeometry(0.38, 14, 10),
+          new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 })
+        );
+        belly.position.set(0, 0.48, 0.32);
+        g.add(belly);
+
+        const beak = new THREE.Mesh(
+          new THREE.ConeGeometry(0.12, 0.28, 8),
+          new THREE.MeshStandardMaterial({ color: 0xf59e0b })
+        );
+        beak.rotation.x = Math.PI / 2;
+        beak.position.set(0, 0.52, 0.62);
+        g.add(beak);
+
+        const flipL = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.06, 0.05, 0.5, 8),
+          new THREE.MeshStandardMaterial({ color: 0x111827 })
+        );
+        flipL.rotation.z = Math.PI / 2.2;
+        flipL.position.set(-0.45, 0.35, 0.15);
+        g.add(flipL);
+        const flipR = flipL.clone();
+        flipR.position.x = 0.45;
+        flipR.rotation.z = -Math.PI / 2.2;
+        g.add(flipR);
+
+        g.position.set(0, 0, 0);
+        return g;
+      }
+
+      function spawnWorld() {
+        windows = [];
+        projectiles = [];
+        particles = [];
+        while (scene.children.length) scene.remove(scene.children[0]);
+
+        const amb = new THREE.AmbientLight(0xdcc8ff, 0.45);
+        scene.add(amb);
+        const sun = new THREE.DirectionalLight(0xfff5e6, 1.1);
+        sun.position.set(30, 50, 20);
+        scene.add(sun);
+
+        const groundGeo = new THREE.PlaneGeometry(220, 220);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x3f6212, roughness: 0.95 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        const road = new THREE.Mesh(
+          new THREE.PlaneGeometry(24, 220),
+          new THREE.MeshStandardMaterial({ color: 0x374151 })
+        );
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.02;
+        scene.add(road);
+
+        for (let i = -90; i <= 90; i += 18) {
+          const line = new THREE.Mesh(
+            new THREE.PlaneGeometry(1.2, 3),
+            new THREE.MeshStandardMaterial({ color: 0xfbbf24 })
+          );
+          line.rotation.x = -Math.PI / 2;
+          line.position.set(0, 0.03, i);
+          scene.add(line);
+        }
+
+        const buildingPositions = [];
+        for (let gx = -2; gx <= 2; gx++) {
+          for (let gz = -2; gz <= 2; gz++) {
+            if (Math.abs(gx) < 1 && Math.abs(gz) < 1) continue;
+            buildingPositions.push([gx * 38 + (Math.random() - 0.5) * 6, gz * 38 + (Math.random() - 0.5) * 6]);
           }
         }
-        buildings.push(b);
-      }
 
-      for (let i = 0; i < 6; i++) {
-        const lane = i % 2 === 0 ? -70 : 70;
-        cars.push({
-          x: rand(-500, 500),
-          z: lane,
-          w: 62,
-          d: 30,
-          speed: lane < 0 ? rand(120, 170) : -rand(130, 190),
-          color: `hsl(${Math.floor(rand(0, 360))} 72% 56%)`
-        });
-      }
-    }
+        for (const [bx, bz] of buildingPositions) {
+          const w = 10 + Math.random() * 6;
+          const d = 10 + Math.random() * 6;
+          const h = 8 + Math.random() * 12;
+          const col = new THREE.Color().setHSL(0.55 + Math.random() * 0.12, 0.35, 0.35 + Math.random() * 0.15);
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, d),
+            new THREE.MeshStandardMaterial({ color: col, roughness: 0.85 })
+          );
+          box.position.set(bx, h / 2, bz);
+          scene.add(box);
 
-    function resetGame() {
-      state.score = 0;
-      state.money = 0;
-      state.wanted = 0;
-      state.hp = 100;
-      state.gameOver = false;
-      state.msg = "3D режим включен";
-      state.messageTimer = 1.2;
-
-      penguin.x = 0;
-      penguin.z = 0;
-      penguin.facing = 1;
-      penguin.swingTimer = 0;
-      penguin.swingCd = 0;
-
-      police.x = 260;
-      police.z = 220;
-      police.hitCd = 0;
-
-      spawnWorld();
-      updateHUD();
-    }
-
-    function updateHUD() {
-      scoreEl.textContent = String(state.score);
-      moneyEl.textContent = `$${state.money}`;
-      wantedEl.textContent = `${Math.max(0, Math.ceil(state.wanted))}★`;
-      hpEl.textContent = String(Math.max(0, Math.floor(state.hp)));
-      hpEl.style.color = state.hp < 35 ? "#f87171" : "#22d3ee";
-    }
-
-    function spawnGlass(x, z, y) {
-      for (let i = 0; i < 12; i++) {
-        particles.push({
-          x,
-          z,
-          y,
-          vx: rand(-160, 160),
-          vz: rand(-160, 160),
-          vy: rand(60, 170),
-          life: rand(0.4, 0.8),
-          size: rand(1.8, 3.8)
-        });
-      }
-    }
-
-    function hitWindows() {
-      let hits = 0;
-      for (const b of buildings) {
-        for (const w of b.windows) {
-          if (w.broken) continue;
-          if (dist2D(penguin.x, penguin.z, w.x, w.z) < 62) {
-            w.broken = true;
-            hits += 1;
-            state.score += 1;
-            state.money += 35;
-            spawnGlass(w.x, w.z, w.y);
+          const faceZ = bz + d / 2 + 0.06;
+          const cols = 2 + Math.floor(Math.random() * 2);
+          const rows = 2 + Math.floor(Math.random() * 2);
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const ww = 1.1;
+              const wh = 1.2;
+              const fx = bx - w / 2 + (c + 1) * (w / (cols + 1));
+              const fy = 1.3 + r * (h / (rows + 1.2));
+              const glass = new THREE.Mesh(
+                new THREE.PlaneGeometry(ww, wh),
+                new THREE.MeshPhysicalMaterial({
+                  color: 0x93c5fd,
+                  metalness: 0.1,
+                  roughness: 0.15,
+                  transmission: 0.65,
+                  transparent: true,
+                  opacity: 0.92
+                })
+              );
+              glass.position.set(fx, fy, faceZ);
+              glass.userData.hits = 0;
+              glass.userData.maxHits = 3 + Math.floor(Math.random() * 2);
+              glass.userData.broken = false;
+              glass.userData.event = pickEvent();
+              scene.add(glass);
+              windows.push({ mesh: glass, center: new THREE.Vector3(fx, fy, faceZ) });
+            }
           }
         }
-      }
-      if (hits > 0) {
-        state.wanted = clamp(state.wanted + hits * 0.8, 0, 5);
-        state.msg = `Разбито окон: +${hits}`;
-        state.messageTimer = 1;
-      }
-    }
 
-    function updatePlayer(dt) {
-      const left = keys.has("arrowleft") || keys.has("a");
-      const right = keys.has("arrowright") || keys.has("d");
-      const up = keys.has("arrowup") || keys.has("w");
-      const down = keys.has("arrowdown") || keys.has("s");
-
-      let dx = 0;
-      let dz = 0;
-      if (left) dx -= 1;
-      if (right) dx += 1;
-      if (up) dz -= 1;
-      if (down) dz += 1;
-
-      const len = Math.hypot(dx, dz) || 1;
-      dx /= len;
-      dz /= len;
-      penguin.x = clamp(penguin.x + dx * penguin.speed * dt, -world.size / 2, world.size / 2);
-      penguin.z = clamp(penguin.z + dz * penguin.speed * dt, -world.size / 2, world.size / 2);
-      if (dx !== 0) penguin.facing = Math.sign(dx);
-    }
-
-    function updatePolice(dt) {
-      const dx = penguin.x - police.x;
-      const dz = penguin.z - police.z;
-      const d = Math.hypot(dx, dz) || 1;
-      const chaseBoost = state.wanted > 0 ? 1.25 : 0.65;
-      const speed = police.speed * chaseBoost;
-      police.x += (dx / d) * speed * dt;
-      police.z += (dz / d) * speed * dt;
-
-      if (state.wanted <= 0) {
-        police.x += Math.sin(performance.now() * 0.0013) * 16 * dt;
-        police.z += Math.cos(performance.now() * 0.0011) * 16 * dt;
+        penguinGroup = makePenguin();
+        scene.add(penguinGroup);
+        penguin = penguinGroup;
+        penguin.position.set(0, 0, 8);
+        yaw = Math.PI;
+        updateHud();
+        showToast("Welcome to dumb Helsinki. Smash Microsoft-looking glass with fruit.");
       }
 
-      if (police.hitCd > 0) police.hitCd -= dt;
-      if (d < 34 && police.hitCd <= 0) {
-        police.hitCd = 0.35;
-        state.hp -= 8 + state.wanted * 1.7;
-        state.msg = "ПОЛИЦЕЙСКИЙ ДОГОНЯЕТ!";
-        state.messageTimer = 0.65;
-      }
-    }
+      function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x6b8cff);
+        scene.fog = new THREE.Fog(0xaac4ff, 45, 120);
 
-    function updateCars(dt) {
-      for (const c of cars) {
-        c.x += c.speed * dt;
-        if (c.x > 530) c.x = -530;
-        if (c.x < -530) c.x = 530;
-        if (Math.abs(penguin.z - c.z) < 25 && Math.abs(penguin.x - c.x) < 34) {
-          state.hp -= 28 * dt;
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400);
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+
+        spawnWorld();
+        updateHud();
+
+        window.addEventListener("resize", onResize);
+        window.addEventListener("keydown", onKeyDown);
+        window.addEventListener("keyup", onKeyUp);
+        window.addEventListener("mousemove", onMouseMove);
+        canvas.addEventListener("mousedown", onMouseDown);
+
+        let last = performance.now();
+        function loop(t) {
+          const dt = Math.min(0.05, (t - last) / 1000);
+          last = t;
+          update(dt);
+          renderer.render(scene, camera);
+          requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      }
+
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function onKeyDown(e) {
+        const k = e.key.toLowerCase();
+        keys[k] = true;
+        if (k === "b") {
+          state.weapon = state.weapon === "apple" ? "bazooka" : "apple";
+          showToast(state.weapon === "bazooka" ? "Bazooka: one hit, but loud and stupid." : "Apples: civilised vandalism.");
+          updateHud();
+        }
+        if (k === "r") {
+          spawnWorld();
+          showToast("City regenerated. Your crimes are forgiven (not legally).");
+        }
+        if (k === "h") openStudy();
+        if (k === "o") {
+          state.drunk = !state.drunk;
+          state.drunkT = state.drunk ? 18 : 0;
+          showToast(state.drunk ? "ÖL mode ON — wobbly penguin. Drink water IRL." : "Sober again. Hydrate.");
+          updateHud();
         }
       }
-    }
 
-    function updateParticles(dt) {
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life -= dt;
-        p.x += p.vx * dt;
-        p.z += p.vz * dt;
-        p.y += p.vy * dt;
-        p.vy -= 340 * dt;
-        if (p.y < 0) p.y = 0;
-        if (p.life <= 0) particles.splice(i, 1);
+      function onKeyUp(e) {
+        keys[e.key.toLowerCase()] = false;
       }
-    }
 
-    function update(dt) {
-      if (state.gameOver) return;
-      if (penguin.swingCd > 0) penguin.swingCd -= dt;
-      if (penguin.swingTimer > 0) penguin.swingTimer -= dt;
-      if (state.messageTimer > 0) state.messageTimer -= dt;
-      if (state.wanted > 0) state.wanted = Math.max(0, state.wanted - dt * 0.025);
-
-      updatePlayer(dt);
-      updatePolice(dt);
-      updateCars(dt);
-      updateParticles(dt);
-
-      camera.x += (penguin.x - camera.x) * Math.min(1, dt * 6);
-      camera.z += (penguin.z - camera.z) * Math.min(1, dt * 6);
-
-      if (state.hp <= 0) {
-        state.hp = 0;
-        state.gameOver = true;
-      }
-      updateHUD();
-    }
-
-    function drawTile(x, z, w, d, color) {
-      const p1 = project(x - w / 2, z - d / 2);
-      const p2 = project(x + w / 2, z - d / 2);
-      const p3 = project(x + w / 2, z + d / 2);
-      const p4 = project(x - w / 2, z + d / 2);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.lineTo(p3.x, p3.y);
-      ctx.lineTo(p4.x, p4.y);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawBox(x, z, w, d, h, color) {
-      const top1 = project(x - w / 2, z - d / 2, h);
-      const top2 = project(x + w / 2, z - d / 2, h);
-      const top3 = project(x + w / 2, z + d / 2, h);
-      const top4 = project(x - w / 2, z + d / 2, h);
-      const bot1 = project(x - w / 2, z - d / 2, 0);
-      const bot2 = project(x + w / 2, z - d / 2, 0);
-      const bot3 = project(x + w / 2, z + d / 2, 0);
-      const bot4 = project(x - w / 2, z + d / 2, 0);
-
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(bot4.x, bot4.y);
-      ctx.lineTo(bot3.x, bot3.y);
-      ctx.lineTo(top3.x, top3.y);
-      ctx.lineTo(top4.x, top4.y);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(0,0,0,0.18)";
-      ctx.beginPath();
-      ctx.moveTo(bot2.x, bot2.y);
-      ctx.lineTo(bot3.x, bot3.y);
-      ctx.lineTo(top3.x, top3.y);
-      ctx.lineTo(top2.x, top2.y);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.beginPath();
-      ctx.moveTo(top1.x, top1.y);
-      ctx.lineTo(top2.x, top2.y);
-      ctx.lineTo(top3.x, top3.y);
-      ctx.lineTo(top4.x, top4.y);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawBuilding(b) {
-      drawBox(b.x, b.z, b.w, b.d, b.h, b.color);
-      for (const w of b.windows) {
-        const p = project(w.x, w.z, w.y);
-        ctx.fillStyle = w.broken ? "#0f172a" : "#7dd3fc";
-        ctx.fillRect(p.x - 6, p.y - 6, 12, 12);
-        if (w.broken) {
-          ctx.strokeStyle = "rgba(148,163,184,0.35)";
-          ctx.beginPath();
-          ctx.moveTo(p.x - 4, p.y - 4);
-          ctx.lineTo(p.x + 4, p.y + 4);
-          ctx.moveTo(p.x + 4, p.y - 4);
-          ctx.lineTo(p.x - 4, p.y + 4);
-          ctx.stroke();
+      function onMouseMove(e) {
+        if (document.pointerLockElement === canvas || e.buttons === 1) {
+          yaw -= e.movementX * 0.0022;
+          pitch -= e.movementY * 0.0022;
+          pitch = Math.max(0.12, Math.min(1.2, pitch));
         }
       }
-    }
 
-    function drawPenguin() {
-      const p = project(penguin.x, penguin.z, 0);
-      ctx.fillStyle = "rgba(0,0,0,0.22)";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y + 9, 15, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#0b1220";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y - 10, 16, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#f8fafc";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y - 6, 9, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#f59e0b";
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y - 7);
-      ctx.lineTo(p.x + 9 * penguin.facing, p.y - 4);
-      ctx.lineTo(p.x, p.y - 1);
-      ctx.closePath();
-      ctx.fill();
-
-      const swing = penguin.swingTimer > 0 ? Math.sin((1 - penguin.swingTimer / 0.22) * Math.PI) : 0;
-      ctx.save();
-      ctx.translate(p.x + penguin.facing * 8, p.y - 11);
-      ctx.rotate((swing * 1.05 - 0.35) * penguin.facing);
-      ctx.fillStyle = "#b45309";
-      ctx.fillRect(0, 0, 24, 5);
-      ctx.fillStyle = "#92400e";
-      ctx.fillRect(18, -2, 10, 8);
-      ctx.restore();
-    }
-
-    function drawPolice() {
-      const p = project(police.x, police.z, 0);
-      ctx.fillStyle = "rgba(0,0,0,0.24)";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y + 10, 15, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#1e40af";
-      ctx.fillRect(p.x - 12, p.y - 28, 24, 28);
-      ctx.fillStyle = "#93c5fd";
-      ctx.fillRect(p.x - 10, p.y - 37, 20, 12);
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(p.x - 12, p.y - 30, 24, 4);
-      ctx.fillStyle = "#dbeafe";
-      ctx.fillRect(p.x - 14, p.y - 40, 28, 4);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(p.x - 8, p.y - 34, 16, 3);
-    }
-
-    function drawCar(c) {
-      drawBox(c.x, c.z, c.w, c.d, 16, c.color);
-      const p = project(c.x, c.z, 12);
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(p.x - 14, p.y - 6, 28, 12);
-    }
-
-    function drawParticles() {
-      for (const part of particles) {
-        const p = project(part.x, part.z, part.y);
-        ctx.globalAlpha = Math.max(0, part.life);
-        ctx.fillStyle = "#93c5fd";
-        ctx.fillRect(p.x, p.y, part.size, part.size);
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function drawGround() {
-      ctx.fillStyle = "#3f6212";
-      ctx.fillRect(0, 0, world.width, world.height);
-      drawTile(0, 0, 1400, 1400, "#4d7c0f");
-      drawTile(0, 0, 1200, 160, "#4b5563");
-      for (let i = -5; i <= 5; i++) {
-        drawTile(i * 110, 0, 48, 10, "#fbbf24");
-      }
-    }
-
-    function drawUIOverlay() {
-      if (state.messageTimer > 0 && state.msg) {
-        ctx.fillStyle = "rgba(15,23,36,0.74)";
-        ctx.fillRect(16, 16, 340, 36);
-        ctx.fillStyle = "#22d3ee";
-        ctx.font = "16px Segoe UI";
-        ctx.fillText(state.msg, 28, 40);
+      function onMouseDown() {
+        if (document.pointerLockElement !== canvas) canvas.requestPointerLock().catch(() => {});
+        throwProjectile();
       }
 
-      if (state.gameOver) {
-        ctx.fillStyle = "rgba(0,0,0,0.58)";
-        ctx.fillRect(0, 0, world.width, world.height);
-        ctx.textAlign = "center";
-        ctx.fillStyle = "#f8fafc";
-        ctx.font = "bold 42px Segoe UI";
-        ctx.fillText("ПИНГВИН ПОВЯЗАН", world.width / 2, world.height / 2 - 18);
-        ctx.font = "22px Segoe UI";
-        ctx.fillStyle = "#fca5a5";
-        ctx.fillText(`Разбито окон: ${state.score} | Кэш: $${state.money}`, world.width / 2, world.height / 2 + 22);
-        ctx.font = "18px Segoe UI";
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillText("Нажми R для новой катки", world.width / 2, world.height / 2 + 58);
-        ctx.textAlign = "start";
+      function getCameraForwardXZ() {
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        dir.y = 0;
+        if (dir.lengthSq() < 1e-6) dir.set(0, 0, -1);
+        dir.normalize();
+        return dir;
       }
-    }
 
-    function drawScene() {
-      drawGround();
+      function throwProjectile() {
+        const cost = state.weapon === "apple" ? 1 : 3;
+        if (state.apples < cost) {
+          showToast("Not enough apples (need " + cost + "). Press H — complete a tiny assignment. STUDYYY.");
+          return;
+        }
+        state.apples -= cost;
 
-      const layers = [];
-      for (const b of buildings) layers.push({ depth: b.x + b.z + 200, draw: () => drawBuilding(b) });
-      for (const c of cars) layers.push({ depth: c.x + c.z + 400, draw: () => drawCar(c) });
-      layers.push({ depth: police.x + police.z + 450, draw: drawPolice });
-      layers.push({ depth: penguin.x + penguin.z + 500, draw: drawPenguin });
-      layers.sort((a, b) => a.depth - b.depth);
-      for (const layer of layers) layer.draw();
+        const origin = penguin.position.clone().add(new THREE.Vector3(0, 1.1, 0));
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        dir.normalize();
 
-      drawParticles();
-      drawUIOverlay();
-    }
+        const speed = state.weapon === "apple" ? 38 : 52;
+        const mesh = state.weapon === "apple"
+          ? new THREE.Mesh(
+              new THREE.SphereGeometry(0.18, 10, 8),
+              new THREE.MeshStandardMaterial({ color: 0xd94634, roughness: 0.4 })
+            )
+          : new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.14, 0.5, 8),
+              new THREE.MeshStandardMaterial({ color: 0x4ade80, metalness: 0.3 })
+            );
+        mesh.position.copy(origin);
+        scene.add(mesh);
 
-    let lastTs = performance.now();
-    function frame(ts) {
-      const dt = Math.min(0.033, (ts - lastTs) / 1000);
-      lastTs = ts;
-      update(dt);
-      drawScene();
-      requestAnimationFrame(frame);
-    }
-
-    function attack() {
-      if (!state.gameOver && penguin.swingCd <= 0) {
-        penguin.swingTimer = 0.22;
-        penguin.swingCd = 0.28;
-        hitWindows();
+        projectiles.push({
+          mesh,
+          vel: dir.multiplyScalar(speed),
+          life: 0,
+          type: state.weapon,
+          maxLife: 3.5
+        });
+        updateHud();
       }
-    }
 
-    window.addEventListener("keydown", (e) => {
-      const k = normalizeKey(e.key);
-      keys.add(k);
-      if (k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright" || k === " " || e.code === "Space") {
-        e.preventDefault();
+      function burstGlass(pos) {
+        for (let i = 0; i < 18; i++) {
+          const s = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 0.12, 0.03),
+            new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.9 })
+          );
+          s.position.copy(pos);
+          scene.add(s);
+          particles.push({
+            mesh: s,
+            vel: new THREE.Vector3((Math.random() - 0.5) * 8, Math.random() * 10, (Math.random() - 0.5) * 8),
+            t: 0
+          });
+        }
       }
-      if (k === " " || e.code === "Space" || k === "enter") {
-        e.preventDefault();
-        attack();
+
+      function update(dt) {
+        if (state.drunk) {
+          state.drunkT -= dt;
+          if (state.drunkT <= 0) {
+            state.drunk = false;
+            updateHud();
+          }
+        }
+
+        const forward = getCameraForwardXZ();
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+        let mx = 0;
+        let mz = 0;
+        if (keys.w) { mx += forward.x; mz += forward.z; }
+        if (keys.s) { mx -= forward.x; mz -= forward.z; }
+        if (keys.a) { mx -= right.x; mz -= right.z; }
+        if (keys.d) { mx += right.x; mz += right.z; }
+        const len = Math.hypot(mx, mz);
+        if (len > 0) {
+          mx /= len;
+          mz /= len;
+        }
+        const run = 11;
+        let drunkWobble = state.drunk ? Math.sin(performance.now() * 0.005) * 0.4 : 0;
+        penguin.position.x += (mx * run + drunkWobble) * dt;
+        penguin.position.z += (mz * run + Math.cos(performance.now() * 0.004) * (state.drunk ? 0.35 : 0)) * dt;
+        penguin.position.x = Math.max(-105, Math.min(105, penguin.position.x));
+        penguin.position.z = Math.max(-105, Math.min(105, penguin.position.z));
+
+        penguin.rotation.y = Math.atan2(forward.x, forward.z);
+
+        const camDist = 12;
+        const cy = 4.5 + pitch * 5;
+        const offX = Math.sin(yaw) * camDist;
+        const offZ = Math.cos(yaw) * camDist;
+        const sway = state.drunk ? Math.sin(performance.now() * 0.003) * 0.7 : 0;
+        camera.position.set(
+          penguin.position.x - offX + sway,
+          penguin.position.y + cy,
+          penguin.position.z - offZ
+        );
+        camera.lookAt(penguin.position.x, penguin.position.y + 1.2, penguin.position.z);
+
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+          const pr = projectiles[i];
+          pr.life += dt;
+          pr.mesh.position.addScaledVector(pr.vel, dt);
+          pr.vel.y -= 14 * dt;
+
+          let hit = false;
+          for (const w of windows) {
+            if (w.mesh.userData.broken) continue;
+            const d = pr.mesh.position.distanceTo(w.center);
+            const rad = pr.type === "apple" ? 0.55 : 1.1;
+            if (d < rad) {
+              hit = true;
+              const dmg = pr.type === "apple" ? 1 : 999;
+              w.mesh.userData.hits += dmg;
+              if (w.mesh.userData.hits >= w.mesh.userData.maxHits) {
+                w.mesh.userData.broken = true;
+                w.mesh.visible = false;
+                burstGlass(w.center.clone());
+                state.points += 100;
+                state.windowsSmashed += 1;
+                state.credits += 25;
+                showEventCard(w.mesh.userData.event);
+                showToast("+100 pts · Event unlocked · Buy imaginary hat later");
+              } else {
+                showToast("Glass cracked… hit again (" + w.mesh.userData.hits + "/" + w.mesh.userData.maxHits + ")");
+              }
+              break;
+            }
+          }
+
+          if (hit || pr.life > pr.maxLife || pr.mesh.position.y < -1) {
+            scene.remove(pr.mesh);
+            projectiles.splice(i, 1);
+            continue;
+          }
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.t += dt;
+          p.mesh.position.addScaledVector(p.vel, dt);
+          p.vel.y -= 22 * dt;
+          p.mesh.rotation.x += dt * 3;
+          if (p.t > 1.2) {
+            scene.remove(p.mesh);
+            particles.splice(i, 1);
+          }
+        }
+
+        updateHud();
       }
-      if (k === "r") resetGame();
-    });
 
-    window.addEventListener("keyup", (e) => keys.delete(normalizeKey(e.key)));
-    canvas.addEventListener("pointerdown", attack);
-
-    resetGame();
-    requestAnimationFrame(frame);
+      init();
+    })();
   </script>
 </body>
 </html>
