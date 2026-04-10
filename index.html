@@ -1,568 +1,106 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Penguin GTA: Window Smash</title>
-  <style>
-    :root {
-      --bg: #0f1724;
-      --panel: #111827;
-      --accent: #22d3ee;
-      --danger: #f87171;
-      --ok: #34d399;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(circle at top, #1f2937, #0b1020 70%);
-      color: #e5e7eb;
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
-      padding: 16px;
-    }
-
-    .wrap {
-      width: min(980px, 100%);
-      display: grid;
-      gap: 12px;
-    }
-
-    .hud {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      background: rgba(17, 24, 39, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 12px;
-      padding: 10px 12px;
-      backdrop-filter: blur(4px);
-    }
-
-    .hud span strong {
-      color: var(--accent);
-    }
-
-    canvas {
-      width: 100%;
-      max-width: 960px;
-      height: auto;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: #0b1324;
-      image-rendering: pixelated;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    }
-
-    .help {
-      font-size: 14px;
-      color: #cbd5e1;
-      background: rgba(17, 24, 39, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 12px;
-      padding: 10px 12px;
-      line-height: 1.4;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pingu Vice: Window Crimes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Glitch&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="wrap">
-    <div class="hud">
-      <span>Окна разбито: <strong id="score">0</strong></span>
-      <span>Деньги: <strong id="money">$0</strong></span>
-      <span>Розыск: <strong id="wanted">0★</strong></span>
-      <span>ХП: <strong id="hp">100</strong></span>
-    </div>
-    <canvas id="game" width="960" height="600"></canvas>
-    <div class="help">
-      Управление: <b>WASD / ЦФЫВ / стрелки</b> - ходить, <b>Пробел</b> - удар битой, <b>R</b> - рестарт.<br />
-      Теперь в 3D-стиле: ломай окна и не дай полицейскому тебя схватить.
-    </div>
+  <div id="game-shell">
+    <div id="scene-root" aria-label="3D penguin city game"></div>
+    <button id="toggle-hud" class="hud-toggle">Hide Menu</button>
+
+    <header class="hud top-hud">
+      <div class="brand-block">
+        <p class="eyebrow">Open-world-ish Finnish student chaos</p>
+        <h1>Pingu Vice</h1>
+        <p class="tagline">Break fake Windows, unlock real events, make friends, and study when you run out of ammo.</p>
+      </div>
+      <div class="stat-row">
+        <article class="stat-card"><span>Score</span><strong id="score">0</strong></article>
+        <article class="stat-card"><span>Windows</span><strong id="windows-hit">0</strong></article>
+        <article class="stat-card"><span>Events</span><strong id="events-joined">0</strong></article>
+        <article class="stat-card"><span>Squad</span><strong id="friend-count">1/4</strong></article>
+        <article class="stat-card"><span>Apples</span><strong id="apple-ammo">6</strong></article>
+        <article class="stat-card"><span>Bat Hits</span><strong id="bazooka-ammo">2</strong></article>
+      </div>
+    </header>
+
+    <aside class="hud left-panel">
+      <section class="panel-card">
+        <h2>Controls</h2>
+        <p><kbd>WASD</kbd> move, <kbd>Shift</kbd> sprint, click to throw apples.</p>
+        <p><kbd>Space</kbd> throws an apple, <kbd>B</kbd> swings the bat with aim help.</p>
+        <p><kbd>R</kbd> submits study assignment for ammo refill, <kbd>F</kbd> invites a friend, <kbd>V</kbd> drinks.</p>
+      </section>
+      <section class="panel-card">
+        <h2>Status</h2>
+        <p id="status-line">Cruising politely through the city.</p>
+        <p id="study-risk">Study risk: acceptable chaos.</p>
+        <p id="drunk-meter">Drunk meter: 0/100</p>
+      </section>
+    </aside>
+
+    <aside class="hud right-panel">
+      <section class="panel-card">
+        <h2>Friends</h2>
+        <div id="friend-list" class="list-stack"></div>
+        <button id="invite-friend" class="ui-button">Invite Friend</button>
+      </section>
+      <section class="panel-card">
+        <h2>Assignments</h2>
+        <div id="task-board" class="list-stack"></div>
+        <button id="study-button" class="ui-button">Submit Assignment For Ammo</button>
+      </section>
+    </aside>
+
+    <footer class="hud bottom-hud">
+      <div class="mini-map-card">
+        <h2>Street Legend Notes</h2>
+        <p>Events only appear as tiny popups when a window breaks. Join together and get discounts later.</p>
+      </div>
+      <div class="mini-map-card">
+        <h2>Weapon Wheel</h2>
+        <p id="weapon-label">Current weapon: Apple</p>
+      </div>
+      <div class="mini-map-card">
+        <h2>Discount Intel</h2>
+        <p id="discount-status">No discount yet. Cause slightly more educational destruction.</p>
+      </div>
+    </footer>
+
+    <section id="event-popup" class="popup hidden" aria-live="polite">
+      <div class="popup-card">
+        <p class="popup-kicker">Window intel acquired</p>
+        <h2 id="popup-title">Event title</h2>
+        <p id="popup-location">University in City</p>
+        <p id="popup-vibe">Event vibe text.</p>
+        <p id="popup-discount" class="popup-discount">Discount text.</p>
+        <div class="popup-actions">
+          <button id="join-event" class="ui-button">Go With Squad</button>
+          <button id="close-popup" class="ui-button secondary">Ignore Responsibly</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="study-popup" class="popup popup-left hidden" aria-live="polite">
+      <div class="popup-card">
+        <p class="popup-kicker">Linux assignment checkpoint</p>
+        <h2 id="study-title">Submit a task</h2>
+        <p id="study-question">Question text</p>
+        <textarea id="study-answer" class="study-input" placeholder="Type your Linux answer here"></textarea>
+        <div class="popup-actions">
+          <button id="submit-study-answer" class="ui-button">Submit Task</button>
+          <button id="close-study-popup" class="ui-button secondary">Later</button>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <script>
-    const canvas = document.getElementById("game");
-    if (!canvas) {
-      throw new Error("Canvas не найден или не поддерживается браузером");
-    }
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Canvas не найден или не поддерживается браузером");
-    }
-
-    const scoreEl = document.getElementById("score");
-    const moneyEl = document.getElementById("money");
-    const wantedEl = document.getElementById("wanted");
-    const hpEl = document.getElementById("hp");
-
-    const world = { width: canvas.width, height: canvas.height, size: 900 };
-    const keys = new Set();
-    const rand = (a, b) => Math.random() * (b - a) + a;
-    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-    const dist2D = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
-    const keyMap = { ц: "w", ф: "a", ы: "s", в: "d" };
-    const normalizeKey = (key) => keyMap[key.toLowerCase()] || key.toLowerCase();
-
-    const state = { score: 0, money: 0, wanted: 0, hp: 100, gameOver: false, msg: "", messageTimer: 0 };
-    const penguin = { x: 0, z: 0, speed: 260, facing: 1, swingTimer: 0, swingCd: 0 };
-    const police = { x: 260, z: 220, speed: 190, hitCd: 0 };
-
-    const buildings = [];
-    const cars = [];
-    const particles = [];
-
-    const camera = {
-      x: 0,
-      z: 0,
-      cx: world.width / 2,
-      cy: 190,
-      sx: 0.72,
-      sy: 0.38
-    };
-
-    function project(x, z, y = 0) {
-      const dx = x - camera.x;
-      const dz = z - camera.z;
-      return {
-        x: camera.cx + (dx - dz) * camera.sx,
-        y: camera.cy + (dx + dz) * camera.sy - y
-      };
-    }
-
-    function spawnWorld() {
-      buildings.length = 0;
-      cars.length = 0;
-      particles.length = 0;
-
-      for (let i = 0; i < 14; i++) {
-        const b = {
-          x: rand(-380, 380),
-          z: rand(-380, 380),
-          w: rand(90, 145),
-          d: rand(90, 145),
-          h: rand(70, 140),
-          color: `hsl(${Math.floor(rand(195, 250))} 35% ${Math.floor(rand(25, 40))}%)`,
-          windows: []
-        };
-        const cols = 2 + Math.floor(rand(0, 2));
-        const rows = 2 + Math.floor(rand(0, 3));
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            b.windows.push({
-              x: b.x - b.w * 0.35 + c * (b.w * 0.7 / Math.max(1, cols - 1)),
-              z: b.z + b.d * 0.52,
-              y: 18 + r * (b.h * 0.6 / Math.max(1, rows - 1)),
-              broken: false
-            });
-          }
-        }
-        buildings.push(b);
-      }
-
-      for (let i = 0; i < 6; i++) {
-        const lane = i % 2 === 0 ? -70 : 70;
-        cars.push({
-          x: rand(-500, 500),
-          z: lane,
-          w: 62,
-          d: 30,
-          speed: lane < 0 ? rand(120, 170) : -rand(130, 190),
-          color: `hsl(${Math.floor(rand(0, 360))} 72% 56%)`
-        });
-      }
-    }
-
-    function resetGame() {
-      state.score = 0;
-      state.money = 0;
-      state.wanted = 0;
-      state.hp = 100;
-      state.gameOver = false;
-      state.msg = "3D режим включен";
-      state.messageTimer = 1.2;
-
-      penguin.x = 0;
-      penguin.z = 0;
-      penguin.facing = 1;
-      penguin.swingTimer = 0;
-      penguin.swingCd = 0;
-
-      police.x = 260;
-      police.z = 220;
-      police.hitCd = 0;
-
-      spawnWorld();
-      updateHUD();
-    }
-
-    function updateHUD() {
-      scoreEl.textContent = String(state.score);
-      moneyEl.textContent = `$${state.money}`;
-      wantedEl.textContent = `${Math.max(0, Math.ceil(state.wanted))}★`;
-      hpEl.textContent = String(Math.max(0, Math.floor(state.hp)));
-      hpEl.style.color = state.hp < 35 ? "#f87171" : "#22d3ee";
-    }
-
-    function spawnGlass(x, z, y) {
-      for (let i = 0; i < 12; i++) {
-        particles.push({
-          x,
-          z,
-          y,
-          vx: rand(-160, 160),
-          vz: rand(-160, 160),
-          vy: rand(60, 170),
-          life: rand(0.4, 0.8),
-          size: rand(1.8, 3.8)
-        });
-      }
-    }
-
-    function hitWindows() {
-      let hits = 0;
-      for (const b of buildings) {
-        for (const w of b.windows) {
-          if (w.broken) continue;
-          if (dist2D(penguin.x, penguin.z, w.x, w.z) < 62) {
-            w.broken = true;
-            hits += 1;
-            state.score += 1;
-            state.money += 35;
-            spawnGlass(w.x, w.z, w.y);
-          }
-        }
-      }
-      if (hits > 0) {
-        state.wanted = clamp(state.wanted + hits * 0.8, 0, 5);
-        state.msg = `Разбито окон: +${hits}`;
-        state.messageTimer = 1;
-      }
-    }
-
-    function updatePlayer(dt) {
-      const left = keys.has("arrowleft") || keys.has("a");
-      const right = keys.has("arrowright") || keys.has("d");
-      const up = keys.has("arrowup") || keys.has("w");
-      const down = keys.has("arrowdown") || keys.has("s");
-
-      let dx = 0;
-      let dz = 0;
-      if (left) dx -= 1;
-      if (right) dx += 1;
-      if (up) dz -= 1;
-      if (down) dz += 1;
-
-      const len = Math.hypot(dx, dz) || 1;
-      dx /= len;
-      dz /= len;
-      penguin.x = clamp(penguin.x + dx * penguin.speed * dt, -world.size / 2, world.size / 2);
-      penguin.z = clamp(penguin.z + dz * penguin.speed * dt, -world.size / 2, world.size / 2);
-      if (dx !== 0) penguin.facing = Math.sign(dx);
-    }
-
-    function updatePolice(dt) {
-      const dx = penguin.x - police.x;
-      const dz = penguin.z - police.z;
-      const d = Math.hypot(dx, dz) || 1;
-      const chaseBoost = state.wanted > 0 ? 1.25 : 0.65;
-      const speed = police.speed * chaseBoost;
-      police.x += (dx / d) * speed * dt;
-      police.z += (dz / d) * speed * dt;
-
-      if (state.wanted <= 0) {
-        police.x += Math.sin(performance.now() * 0.0013) * 16 * dt;
-        police.z += Math.cos(performance.now() * 0.0011) * 16 * dt;
-      }
-
-      if (police.hitCd > 0) police.hitCd -= dt;
-      if (d < 34 && police.hitCd <= 0) {
-        police.hitCd = 0.35;
-        state.hp -= 8 + state.wanted * 1.7;
-        state.msg = "ПОЛИЦЕЙСКИЙ ДОГОНЯЕТ!";
-        state.messageTimer = 0.65;
-      }
-    }
-
-    function updateCars(dt) {
-      for (const c of cars) {
-        c.x += c.speed * dt;
-        if (c.x > 530) c.x = -530;
-        if (c.x < -530) c.x = 530;
-        if (Math.abs(penguin.z - c.z) < 25 && Math.abs(penguin.x - c.x) < 34) {
-          state.hp -= 28 * dt;
-        }
-      }
-    }
-
-    function updateParticles(dt) {
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life -= dt;
-        p.x += p.vx * dt;
-        p.z += p.vz * dt;
-        p.y += p.vy * dt;
-        p.vy -= 340 * dt;
-        if (p.y < 0) p.y = 0;
-        if (p.life <= 0) particles.splice(i, 1);
-      }
-    }
-
-    function update(dt) {
-      if (state.gameOver) return;
-      if (penguin.swingCd > 0) penguin.swingCd -= dt;
-      if (penguin.swingTimer > 0) penguin.swingTimer -= dt;
-      if (state.messageTimer > 0) state.messageTimer -= dt;
-      if (state.wanted > 0) state.wanted = Math.max(0, state.wanted - dt * 0.025);
-
-      updatePlayer(dt);
-      updatePolice(dt);
-      updateCars(dt);
-      updateParticles(dt);
-
-      camera.x += (penguin.x - camera.x) * Math.min(1, dt * 6);
-      camera.z += (penguin.z - camera.z) * Math.min(1, dt * 6);
-
-      if (state.hp <= 0) {
-        state.hp = 0;
-        state.gameOver = true;
-      }
-      updateHUD();
-    }
-
-    function drawTile(x, z, w, d, color) {
-      const p1 = project(x - w / 2, z - d / 2);
-      const p2 = project(x + w / 2, z - d / 2);
-      const p3 = project(x + w / 2, z + d / 2);
-      const p4 = project(x - w / 2, z + d / 2);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.lineTo(p3.x, p3.y);
-      ctx.lineTo(p4.x, p4.y);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawBox(x, z, w, d, h, color) {
-      const top1 = project(x - w / 2, z - d / 2, h);
-      const top2 = project(x + w / 2, z - d / 2, h);
-      const top3 = project(x + w / 2, z + d / 2, h);
-      const top4 = project(x - w / 2, z + d / 2, h);
-      const bot1 = project(x - w / 2, z - d / 2, 0);
-      const bot2 = project(x + w / 2, z - d / 2, 0);
-      const bot3 = project(x + w / 2, z + d / 2, 0);
-      const bot4 = project(x - w / 2, z + d / 2, 0);
-
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(bot4.x, bot4.y);
-      ctx.lineTo(bot3.x, bot3.y);
-      ctx.lineTo(top3.x, top3.y);
-      ctx.lineTo(top4.x, top4.y);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(0,0,0,0.18)";
-      ctx.beginPath();
-      ctx.moveTo(bot2.x, bot2.y);
-      ctx.lineTo(bot3.x, bot3.y);
-      ctx.lineTo(top3.x, top3.y);
-      ctx.lineTo(top2.x, top2.y);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.beginPath();
-      ctx.moveTo(top1.x, top1.y);
-      ctx.lineTo(top2.x, top2.y);
-      ctx.lineTo(top3.x, top3.y);
-      ctx.lineTo(top4.x, top4.y);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawBuilding(b) {
-      drawBox(b.x, b.z, b.w, b.d, b.h, b.color);
-      for (const w of b.windows) {
-        const p = project(w.x, w.z, w.y);
-        ctx.fillStyle = w.broken ? "#0f172a" : "#7dd3fc";
-        ctx.fillRect(p.x - 6, p.y - 6, 12, 12);
-        if (w.broken) {
-          ctx.strokeStyle = "rgba(148,163,184,0.35)";
-          ctx.beginPath();
-          ctx.moveTo(p.x - 4, p.y - 4);
-          ctx.lineTo(p.x + 4, p.y + 4);
-          ctx.moveTo(p.x + 4, p.y - 4);
-          ctx.lineTo(p.x - 4, p.y + 4);
-          ctx.stroke();
-        }
-      }
-    }
-
-    function drawPenguin() {
-      const p = project(penguin.x, penguin.z, 0);
-      ctx.fillStyle = "rgba(0,0,0,0.22)";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y + 9, 15, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#0b1220";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y - 10, 16, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#f8fafc";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y - 6, 9, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#f59e0b";
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y - 7);
-      ctx.lineTo(p.x + 9 * penguin.facing, p.y - 4);
-      ctx.lineTo(p.x, p.y - 1);
-      ctx.closePath();
-      ctx.fill();
-
-      const swing = penguin.swingTimer > 0 ? Math.sin((1 - penguin.swingTimer / 0.22) * Math.PI) : 0;
-      ctx.save();
-      ctx.translate(p.x + penguin.facing * 8, p.y - 11);
-      ctx.rotate((swing * 1.05 - 0.35) * penguin.facing);
-      ctx.fillStyle = "#b45309";
-      ctx.fillRect(0, 0, 24, 5);
-      ctx.fillStyle = "#92400e";
-      ctx.fillRect(18, -2, 10, 8);
-      ctx.restore();
-    }
-
-    function drawPolice() {
-      const p = project(police.x, police.z, 0);
-      ctx.fillStyle = "rgba(0,0,0,0.24)";
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y + 10, 15, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#1e40af";
-      ctx.fillRect(p.x - 12, p.y - 28, 24, 28);
-      ctx.fillStyle = "#93c5fd";
-      ctx.fillRect(p.x - 10, p.y - 37, 20, 12);
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(p.x - 12, p.y - 30, 24, 4);
-      ctx.fillStyle = "#dbeafe";
-      ctx.fillRect(p.x - 14, p.y - 40, 28, 4);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(p.x - 8, p.y - 34, 16, 3);
-    }
-
-    function drawCar(c) {
-      drawBox(c.x, c.z, c.w, c.d, 16, c.color);
-      const p = project(c.x, c.z, 12);
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(p.x - 14, p.y - 6, 28, 12);
-    }
-
-    function drawParticles() {
-      for (const part of particles) {
-        const p = project(part.x, part.z, part.y);
-        ctx.globalAlpha = Math.max(0, part.life);
-        ctx.fillStyle = "#93c5fd";
-        ctx.fillRect(p.x, p.y, part.size, part.size);
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    function drawGround() {
-      ctx.fillStyle = "#3f6212";
-      ctx.fillRect(0, 0, world.width, world.height);
-      drawTile(0, 0, 1400, 1400, "#4d7c0f");
-      drawTile(0, 0, 1200, 160, "#4b5563");
-      for (let i = -5; i <= 5; i++) {
-        drawTile(i * 110, 0, 48, 10, "#fbbf24");
-      }
-    }
-
-    function drawUIOverlay() {
-      if (state.messageTimer > 0 && state.msg) {
-        ctx.fillStyle = "rgba(15,23,36,0.74)";
-        ctx.fillRect(16, 16, 340, 36);
-        ctx.fillStyle = "#22d3ee";
-        ctx.font = "16px Segoe UI";
-        ctx.fillText(state.msg, 28, 40);
-      }
-
-      if (state.gameOver) {
-        ctx.fillStyle = "rgba(0,0,0,0.58)";
-        ctx.fillRect(0, 0, world.width, world.height);
-        ctx.textAlign = "center";
-        ctx.fillStyle = "#f8fafc";
-        ctx.font = "bold 42px Segoe UI";
-        ctx.fillText("ПИНГВИН ПОВЯЗАН", world.width / 2, world.height / 2 - 18);
-        ctx.font = "22px Segoe UI";
-        ctx.fillStyle = "#fca5a5";
-        ctx.fillText(`Разбито окон: ${state.score} | Кэш: $${state.money}`, world.width / 2, world.height / 2 + 22);
-        ctx.font = "18px Segoe UI";
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillText("Нажми R для новой катки", world.width / 2, world.height / 2 + 58);
-        ctx.textAlign = "start";
-      }
-    }
-
-    function drawScene() {
-      drawGround();
-
-      const layers = [];
-      for (const b of buildings) layers.push({ depth: b.x + b.z + 200, draw: () => drawBuilding(b) });
-      for (const c of cars) layers.push({ depth: c.x + c.z + 400, draw: () => drawCar(c) });
-      layers.push({ depth: police.x + police.z + 450, draw: drawPolice });
-      layers.push({ depth: penguin.x + penguin.z + 500, draw: drawPenguin });
-      layers.sort((a, b) => a.depth - b.depth);
-      for (const layer of layers) layer.draw();
-
-      drawParticles();
-      drawUIOverlay();
-    }
-
-    let lastTs = performance.now();
-    function frame(ts) {
-      const dt = Math.min(0.033, (ts - lastTs) / 1000);
-      lastTs = ts;
-      update(dt);
-      drawScene();
-      requestAnimationFrame(frame);
-    }
-
-    function attack() {
-      if (!state.gameOver && penguin.swingCd <= 0) {
-        penguin.swingTimer = 0.22;
-        penguin.swingCd = 0.28;
-        hitWindows();
-      }
-    }
-
-    window.addEventListener("keydown", (e) => {
-      const k = normalizeKey(e.key);
-      keys.add(k);
-      if (k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright" || k === " " || e.code === "Space") {
-        e.preventDefault();
-      }
-      if (k === " " || e.code === "Space" || k === "enter") {
-        e.preventDefault();
-        attack();
-      }
-      if (k === "r") resetGame();
-    });
-
-    window.addEventListener("keyup", (e) => keys.delete(normalizeKey(e.key)));
-    canvas.addEventListener("pointerdown", attack);
-
-    resetGame();
-    requestAnimationFrame(frame);
-  </script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
